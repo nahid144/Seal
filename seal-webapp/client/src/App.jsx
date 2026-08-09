@@ -271,7 +271,7 @@ function App() {
                   )}
                   {download.status === 'completed' && (
                     <div className="download-complete">
-                      <a href={`/downloads/${download.filename}`} download className="save-link">
+                      <a href={`/api/download/file/${download.filename}`} download className="save-link">
                         Save File
                       </a>
                     </div>
@@ -306,7 +306,7 @@ function App() {
                   </div>
                   <div className="history-actions">
                     {item.status === 'completed' && item.filename && (
-                      <a href={`/downloads/${item.filename}`} download className="save-link">
+                      <a href={`/api/download/file/${item.filename}`} download className="save-link">
                         Save
                       </a>
                     )}

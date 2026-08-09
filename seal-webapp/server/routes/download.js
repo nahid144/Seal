@@ -2,11 +2,23 @@ import { Router } from 'express';
 
 const router = Router();
 
+const isValidUrl = (string) => {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
 router.post('/info', async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
+    }
+    if (!isValidUrl(url)) {
+      return res.status(400).json({ error: 'Invalid URL format' });
     }
 
     const downloadManager = req.app.get('downloadManager');
@@ -22,6 +34,12 @@ router.post('/start', async (req, res) => {
     const { url, formatId, mode } = req.body;
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
+    }
+    if (!isValidUrl(url)) {
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
+    if (mode && !['video', 'audio'].includes(mode)) {
+      return res.status(400).json({ error: 'Mode must be "video" or "audio"' });
     }
 
     const downloadManager = req.app.get('downloadManager');
@@ -62,6 +80,19 @@ router.delete('/file/:filename', (req, res) => {
   } else {
     res.status(404).json({ error: 'File not found' });
   }
+});
+
+router.get('/file/:filename', (req, res) => {
+  const downloadManager = req.app.get('downloadManager');
+  const filePath = downloadManager.getFilePath(req.params.filename);
+  
+  if (!filePath) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  const filename = filePath.split('/').pop();
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.sendFile(filePath);
 });
 
 export default router;

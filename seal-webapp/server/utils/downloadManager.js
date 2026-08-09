@@ -1,15 +1,24 @@
 import { spawn } from 'child_process';
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs';
-import { join, extname } from 'path';
+import { join, extname, resolve } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const DOWNLOADS_DIR = join(__dirname, '..', '..', 'downloads');
 const YT_DLP_PATH = process.env.YT_DLP_PATH || 'yt-dlp';
+
+let ytDlpAvailable = false;
+try {
+  execSync(`${YT_DLP_PATH} --version`, { stdio: 'ignore' });
+  ytDlpAvailable = true;
+} catch (e) {
+  console.warn('Warning: yt-dlp not found. Downloads will not work.');
+}
 
 if (!existsSync(DOWNLOADS_DIR)) {
   mkdirSync(DOWNLOADS_DIR, { recursive: true });
@@ -23,6 +32,10 @@ export class DownloadManager {
   }
 
   async getVideoInfo(url) {
+    if (!ytDlpAvailable) {
+      throw new Error('yt-dlp is not installed. Please install yt-dlp to use this feature.');
+    }
+    
     return new Promise((resolve, reject) => {
       const args = [
         '--dump-json',
@@ -104,6 +117,10 @@ export class DownloadManager {
   }
 
   async startDownload(url, formatId, mode = 'video') {
+    if (!ytDlpAvailable) {
+      throw new Error('yt-dlp is not installed. Please install yt-dlp to use this feature.');
+    }
+    
     const downloadId = uuidv4();
     const outputTemplate = join(DOWNLOADS_DIR, `${downloadId}_%(title)s.%(ext)s`);
 
@@ -247,11 +264,43 @@ export class DownloadManager {
   }
 
   deleteFile(filename) {
-    const filePath = join(DOWNLOADS_DIR, filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
+    const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '');
+    if (sanitized !== filename || sanitized.includes('..')) {
+      return false;
+    }
+    
+    const filePath = join(DOWNLOADS_DIR, sanitized);
+    const resolvedPath = resolve(filePath);
+    const downloadsDirResolved = resolve(DOWNLOADS_DIR);
+    
+    if (!resolvedPath.startsWith(downloadsDirResolved)) {
+      return false;
+    }
+    
+    if (existsSync(resolvedPath)) {
+      unlinkSync(resolvedPath);
       return true;
     }
     return false;
+  }
+
+  getFilePath(filename) {
+    const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '');
+    if (sanitized !== filename || sanitized.includes('..')) {
+      return null;
+    }
+    
+    const filePath = join(DOWNLOADS_DIR, sanitized);
+    const resolvedPath = resolve(filePath);
+    const downloadsDirResolved = resolve(DOWNLOADS_DIR);
+    
+    if (!resolvedPath.startsWith(downloadsDirResolved)) {
+      return null;
+    }
+    
+    if (existsSync(resolvedPath)) {
+      return resolvedPath;
+    }
+    return null;
   }
 }
