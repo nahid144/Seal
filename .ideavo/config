@@ -1,0 +1,67 @@
+{
+  "systemSetup": [
+    {
+      "name": "Install JDK 21 via SDKMAN",
+      "command": "curl -s \"https://get.sdkman.io\" | bash && source \"$HOME/.sdkman/bin/sdkman-init.sh\" && sdk install java 21.0.4-tem"
+    },
+    {
+      "name": "Install Android SDK command-line tools",
+      "command": "mkdir -p $ANDROID_HOME/cmdline-tools && curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip && unzip -q /tmp/cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools && mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && rm /tmp/cmdline-tools.zip"
+    },
+    {
+      "name": "Accept Android SDK licenses",
+      "command": "yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses"
+    },
+    {
+      "name": "Install Android SDK platform and build tools",
+      "command": "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \"platforms;android-35\" \"build-tools;35.0.0\" \"platform-tools\""
+    }
+  ],
+  "templateName": "custom",
+  "projectDependencies": [],
+  "codeChecks": [
+    {
+      "name": "Run Android Lint",
+      "command": "./gradlew lint"
+    },
+    {
+      "name": "Check Code Formatting",
+      "command": "./gradlew ktfmtCheck"
+    }
+  ],
+  "buildSteps": [
+    {
+      "name": "Build Debug APK",
+      "command": "./gradlew assembleGenericDebug"
+    }
+  ],
+  "runStep": [
+    {
+      "name": "Install Debug APK on device",
+      "command": "./gradlew installGenericDebug",
+      "port": ""
+    }
+  ],
+  "deploySteps": [
+    {
+      "name": "Build Release APK",
+      "command": "./gradlew assembleGenericRelease"
+    }
+  ],
+  "cleanupFiles": [
+    "build/",
+    "app/build/",
+    "color/build/",
+    "buildSrc/build/",
+    ".gradle/",
+    ".kotlin/",
+    "local.properties"
+  ],
+  "packageManager": "gradle",
+  "envPaths": [
+    {
+      "name": "default",
+      "path": ".env"
+    }
+  ]
+}
