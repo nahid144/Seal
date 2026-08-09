@@ -15,9 +15,20 @@ dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 const server = createServer(app);
+
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:4173'];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.e2b.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST']
   }
 });
@@ -25,7 +36,15 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3001;
 const downloadManager = new DownloadManager(io);
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.e2b.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
 app.use('/downloads', express.static(join(__dirname, '..', 'downloads')));
 
