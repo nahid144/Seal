@@ -15,6 +15,14 @@
     {
       "name": "Install Android SDK platform and build tools",
       "command": "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \"platforms;android-35\" \"build-tools;35.0.0\" \"platform-tools\""
+    },
+    {
+      "name": "Install Node.js dependencies for webapp",
+      "command": "cd seal-webapp/server && npm install && cd ../client && npm install"
+    },
+    {
+      "name": "Install yt-dlp",
+      "command": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp"
     }
   ],
   "templateName": "custom",
@@ -33,6 +41,10 @@
     {
       "name": "Build Debug APK",
       "command": "./gradlew assembleGenericDebug"
+    },
+    {
+      "name": "Build Webapp Frontend",
+      "command": "cd seal-webapp/client && npm run build"
     }
   ],
   "runStep": [
@@ -40,6 +52,11 @@
       "name": "Install Debug APK on device",
       "command": "./gradlew installGenericDebug",
       "port": ""
+    },
+    {
+      "name": "Run Webapp (Server + Client)",
+      "command": "cd seal-webapp/server && npm run dev",
+      "port": "3001"
     }
   ],
   "deploySteps": [
@@ -55,13 +72,21 @@
     "buildSrc/build/",
     ".gradle/",
     ".kotlin/",
-    "local.properties"
+    "local.properties",
+    "seal-webapp/server/node_modules/",
+    "seal-webapp/client/node_modules/",
+    "seal-webapp/client/dist/",
+    "seal-webapp/downloads/"
   ],
   "packageManager": "gradle",
   "envPaths": [
     {
       "name": "default",
       "path": ".env"
+    },
+    {
+      "name": "webapp",
+      "path": "seal-webapp/.env"
     }
   ]
 }
